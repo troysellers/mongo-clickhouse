@@ -202,7 +202,7 @@ avn service integration-update <SERVICE_INTEGRATION_ID> \
 }'
 ```
 
-Once that has executed you should be able to see a table in the database created by the integration in the console query editor. 
+Once that has executed you should be able to see a table in the database created by the integration in the console query editor. Be sure to select the right database here, the integration table is not created in the default database. 
 
 ![show-tables](img/show-tables.png)
 
