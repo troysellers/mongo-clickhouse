@@ -1,6 +1,6 @@
 #!/bin/bash
 
-avn service integration-update 840ba31e-2a79-48ce-a19f-f66692c21c9f \
+avn service integration-update 5be9583e-170f-45d9-880c-700cf75249d4 \
     --project tsellers-demo \
     --user-config-json '{
     "tables": [
