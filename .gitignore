@@ -1,0 +1,8 @@
+.terraform/
+.DS_Store
+terraform.tfstate*
+*.json
+.terraform.*
+variables.tf
+clickhouse-connect.sh
+creds/
