@@ -1,10 +1,10 @@
 
-CREATE TABLE default.movies2
+CREATE TABLE default.movies
 (
     `_id` Nested(`$oid` String),
     fullplot String,
     imdb Nested(rating Float32, votes Int64, id Int64),
-    year String,
+    year Int64,
     plot String,
     genres Array(String),
     rated String,
@@ -24,6 +24,6 @@ CREATE TABLE default.movies2
     runtime Int64
 ) ENGINE = MergeTree ORDER BY (`_id.$oid`);
 
-CREATE MATERIALIZED VIEW default.movies_mv2 TO default.movies2 AS 
+CREATE MATERIALIZED VIEW default.movies_mv TO default.movies AS 
 SELECT *
-FROM `service_mongo-demo--kafka`.movies_queue2;
+FROM `service_mongo-demo--kafka`.movies_queue;

@@ -24,8 +24,9 @@ Now, let's create the resources that you will need for this project.
 Included in this repository is the terraform scripts you will need to create everything, so if you are familiar with [Terraform](https://registry.terraform.io/providers/aiven/aiven/latest/docs) and the [Aiven Terraform Provider](https://docs.aiven.io/docs/tools/terraform.html) please feel free to run these instead. 
 
 At the moment, Aiven for Clickhouse is in a beta release which means there are a few things missing around the supporting tooling etc. 
+If you are using Terraform, [these steps](#configure-clickhouse) are still required to finish.
 
-Otherwise, if you would prefer to point and click let's 
+Otherwise, if you would prefer to point and click let's get started in the console.
 
 ## Aiven for Apache Kafka
 
@@ -34,7 +35,7 @@ Once you are logged in you should see the empty service panel, go ahead and crea
 
 ![Empty Services](/img/empty-services.png)
 
-For this demo I have setup using a Startup-2 plan in Google Cloud, Sydney Australia. As you are about to find out, changing this type of stuff with Aiven is super simple. 
+For this demo I have setup using a Business-4 plan in Google Cloud, Sydney Australia. As you are about to find out, changing this type of stuff with Aiven is super simple. 
 
 Documentation for [Aiven for Apache Kafka](https://docs.aiven.io/docs/products/kafka.html)
 
@@ -49,6 +50,30 @@ From here you want to "Create new Apache Kafka Connect integration"
 Once the modal opens, you want to create a New Service. I used a Startup-4 to keep the costs down!  
 
 ![New Kafka Connect](img/new-kafka-connect-service.png)
+
+Once your Kafka Connect service is up and running, select it and go to the Connectors tab. 
+Create a new connector using the [Mongo DB Source connector](https://docs.aiven.io/docs/products/kafka/kafka-connect/howto/mongodb-poll-source-connector.html). This is the [offical MongoDB connector](https://www.mongodb.com/docs/kafka-connector/current/source-connector/), if you wanted to you could accomplish this using the Debezium Source connector for MongoDB as well. 
+
+The configuration required is 
+```json
+    "name" : "mongo-source",
+    "connector.class" : "com.mongodb.kafka.connect.MongoSourceConnector",
+    "connection.uri" :  "mongodb+srv://<mongo-user>:<mongo-pass>@<mongo-url>/?retryWrites=true&w=majority",
+    "database" : "sample_mflix",
+    "collection" : "movies",
+    "copy.existing" : "true",
+    "poll.await.time.ms" : "1000",
+    "publish.full.document.only" : true,
+    "poll.max.batch.size" : 500,
+    "output.format.value":"json",
+    "output.format.key":"json",
+    "key.converter.schemas.enable":"false",
+    "value.converter.schemas.enable":"false",
+    "key.converter":"org.apache.kafka.connect.storage.StringConverter",
+    "value.converter":"org.apache.kafka.connect.storage.StringConverter"
+```
+
+You can get the [connection string](https://www.mongodb.com/docs/guides/atlas/connection-string/) from MongoDB Atlas. 
 
 Documentation for [Aiven for Apache Kafka Connect](https://docs.aiven.io/docs/products/kafka/kafka-connect.html)
 
@@ -65,18 +90,160 @@ SURPRISE!! Extra credits for using the Beta Clickhouse service :) lucky you!
 
 Documentation for [Aiven for Clickhouse](https://docs.aiven.io/docs/products/clickhouse.html)
 
+You should have three services running, show all greens on the board! 
+![services](img/services.png)
+
+And after a minute or two you will see that the MongoDB source connector has created a topic for you and this topic has about 23000 messages in it.
+
+![ready for clickhouse](img/ready-for-clickhouse.png)
+
 # Configure Clickhouse
-So now you have all 
 
+Let's setup the Clickhouse - Kafka integration and create the necessary tables. 
 
-[Aiven for Apache Kafka](https://docs.aiven.io/docs/products/kafka.html)
+If you have used the terraform script, you will find a `clickhouse-setup.sh` has been created for you. Run this script to create a connection to Clickhouse from your terminal, it assumes you have the [Clickhouse client](https://clickhouse.com/docs/en/getting-started/install/) setup on your local machine though. 
 
-[Aiven for Apach Kafka Connect](https://docs.aiven.io/docs/products/kafka/kafka-connect.html)
+If you wish to avoid that step you will find an incredibly handy query editor for Clickhouse right there in the Aiven console that we can use to achieve the rest of our tasks.
 
-[Aiven S3 Sink config](https://docs.aiven.io/docs/products/kafka/kafka-connect/howto/s3-sink-connector-aiven.html)
+![query editor](img/query-editor.png)
 
-[Mongo Source config](https://docs.aiven.io/docs/products/kafka/kafka-connect/howto/mongodb-poll-source-connector.html)
+Firstly, the Clickhouse - Kafka integration needs to be setup. At the time of writing, this was not available in the terraform script so we will do this via the console. Open you Clickhouse service and hit the Setup Integrations button.
 
-[Aiven terraform provider](https://docs.aiven.io/docs/tools/terraform.html)
+![setup integration](img/setup-inetgration.png)
 
-There also exists a [simple golang client](https://github.com/troysellers/go-mongo-test) that reads movies from an IMDB list and attempts to insert or update into the sample movies dataset provided with the free trial Mongo Atlas service
+Select the Apache Kafka integration and select the existing service that you created earlier
+
+![existing kafak](img/existing-kafka.png)
+
+Now we have to retrieve the Service Integration ID and for that we are going to need the Aiven CLI, you can install it following [these instructions](https://docs.aiven.io/docs/tools/cli.html)
+
+You will know it is all successful when you can do this 
+```console
+$ avn
+usage: avn [-h] [--config CONFIG] [--version] [--auth-ca FILE] [--auth-token AUTH_TOKEN] [--show-http] [--url URL] [--request-timeout REQUEST_TIMEOUT]  ...
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --config CONFIG       config file location '/Users/troysellers/.config/aiven/aiven-client.json'
+  --version             show program's version number and exit
+  --auth-ca FILE        CA certificate to use [AIVEN_CA_CERT], default None
+  --auth-token AUTH_TOKEN
+                        Client auth token to use [AIVEN_AUTH_TOKEN], [AIVEN_CREDENTIALS_FILE]
+  --show-http           Show HTTP requests and responses
+  --url URL             Server base url default 'https://api.aiven.io'
+  --request-timeout REQUEST_TIMEOUT
+                        Wait for up to N seconds for a response to a request (default: infinite)
+
+command categories:
+  
+    account             Account commands
+    billing-group       Billing-Group commands
+    card                Card commands
+    cloud               Cloud commands
+    crab                Aiven crab
+    credits             Credits commands
+    events              View project event logs
+    help                List commands
+    mirrormaker         Mirrormaker commands
+    project             Project commands
+    service             Service commands
+    static-ip           Static-Ip commands
+    ticket              Ticket commands
+    user                User commands
+    vpc                 Vpc commands
+``` 
+
+Once it's working, find your service integration identifier 
+
+```console
+avn service integration-list mongo-demo-clickhouse
+SERVICE_INTEGRATION_ID                SOURCE                 DEST                   INTEGRATION_TYPE  ENABLED  ACTIVE  DESCRIPTION                                                                     
+====================================  =====================  =====================  ================  =======  ======  ================================================================================
+f39046a3-<redacted>-529b6e0a0edd  mongo-demo--kafka      mongo-demo-clickhouse  clickhouse_kafka  true     true    Access a Kafka cluster from ClickHouse
+(integration not enabled)             mongo-demo-clickhouse  mongo-demo--kafka      kafka_logs        false    false   Send service logs to Aiven Apache Kafka service or external Apache Kafka cluster
+```
+
+Now let's create the data table that is going to be used to connect Clickhouse to Kafka by using the following command in your Terminal. (Update the two variables at the top of the command to match the environment you have created first)
+```console 
+avn service integration-update <SERVICE_INTEGRATION_ID> \
+    --project <YOUR PROJECT NAME> \
+    --user-config-json '{
+    "tables": [
+        {
+            "name": "movies_queue2",
+            "columns": [
+                {"name": "_id" , "type": "Nested(`$oid` String)"},
+                {"name": "fullplot" , "type": "String"},
+                {"name": "imdb" , "type": "Nested( rating Float32, votes Int64, id Int64)"},
+                {"name": "year" , "type": "String"},
+                {"name": "plot" , "type": "String"},
+                {"name": "genres" , "type": "Array(String)"},
+                {"name": "rated" , "type": "String"},
+                {"name": "metacritic" , "type": "Int64"},
+                {"name": "title" , "type": "String"},
+                {"name": "lastupdate" , "type": "String"},
+                {"name": "languages" , "type": "Array(String)"},
+                {"name": "writers" , "type": "Array(String)"},
+                {"name": "type" , "type": "String"},
+                {"name" : "poster" , "type": "String"},
+                {"name": "num_mflix_comments" , "type": "Int64"},
+                {"name": "released" , "type": "Nested(`$date` Int64)"},
+                {"name": "awards" , "type": "Nested(wins Int64, nominations Int64, text String)"},
+                {"name": "countries" , "type": "Array(String)"},
+                {"name": "cast" , "type": "Array(String)"},
+                {"name": "directors" , "type": "Array(String)"},
+                {"name": "runtime" , "type": "Int64"}
+            ],
+            "topics": [{"name": "sample_mflix.movies"}],
+            "data_format": "JSONEachRow",
+            "group_name": "movies_consumer"
+        }
+    ]
+}'
+```
+
+Once that has executed you should be able to see a table in the database created by the integration in the console query editor. 
+
+![show-tables](img/show-tables.png)
+
+Now, let's create the user query table and the materialised view. First, the table... 
+
+```sql
+CREATE TABLE default.movies
+(
+    `_id` Nested(`$oid` String),
+    fullplot String,
+    imdb Nested(rating Float32, votes Int64, id Int64),
+    year String,
+    plot String,
+    genres Array(String),
+    rated String,
+    metacritic Int64,
+    title String,
+    lastupdate String,
+    languages Array(String),
+    writers Array(String),
+    `type` String,
+    poster String,
+    num_mflix_comments Int64,
+    released Nested(`$date` Int64),
+    awards Nested(wins Int64, nominations Int64, text String),
+    countries Array(String),
+    cast Array(String),
+    directors Array(String),
+    runtime Int64
+) ENGINE = MergeTree ORDER BY (`_id.$oid`);
+```
+Then the materialised view
+
+```sql
+CREATE MATERIALIZED VIEW default.movies_mv TO default.movies AS 
+SELECT *
+FROM `service_mongo-demo--kafka`.movies_queue;
+```
+
+Successful create will look something like 
+
+![table success](img/table-success.png)
+
+Now you should be able to select data from your movies table. Happy analytic'ing :) 

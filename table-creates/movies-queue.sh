@@ -1,16 +1,16 @@
 #!/bin/bash
 
-avn service integration-update ea0cf7d4-4a36-45bc-8563-680b6fd4c69a \
+avn service integration-update f39046a3-fc3c-4d94-b686-529b6e0a0edd \
     --project tsellers-demo \
     --user-config-json '{
     "tables": [
         {
-            "name": "movies_queue2",
+            "name": "movies_queue",
             "columns": [
                 {"name": "_id" , "type": "Nested(`$oid` String)"},
                 {"name": "fullplot" , "type": "String"},
                 {"name": "imdb" , "type": "Nested( rating Float32, votes Int64, id Int64)"},
-                {"name": "year" , "type": "String"},
+                {"name": "year" , "type": "Int64"},
                 {"name": "plot" , "type": "String"},
                 {"name": "genres" , "type": "Array(String)"},
                 {"name": "rated" , "type": "String"},

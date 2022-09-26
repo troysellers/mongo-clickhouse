@@ -1,7 +1,7 @@
 resource "aiven_kafka" "demo-kafka" {
   project                 = var.project_name
   cloud_name              = var.cloud_name
-  plan                    = "startup-2"
+  plan                    = "business-4"
   service_name            = join("-", [var.service_name_prefix, "kafka"])
   maintenance_window_dow  = "sunday"
   maintenance_window_time = "10:00:00"
@@ -50,7 +50,7 @@ resource "aiven_kafka_connector" "mongo-source" {
   config = {
     "name" : "mongo-source",
     "connector.class" : "com.mongodb.kafka.connect.MongoSourceConnector",
-    "connection.uri" :  "mongodb+srv://troys-mongo2-test:thisMongoTest@cluster0.tthnvon.mongodb.net/?retryWrites=true&w=majority",
+    "connection.uri" :  var.mongo_uri,
     "database" : "sample_mflix",
     "collection" : "movies",
     "copy.existing" : "true",
