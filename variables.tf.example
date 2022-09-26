@@ -1,6 +1,7 @@
-variable "aiven_api_token" {default = "<your aiven api token"}
+variable "aiven_api_token" {default = "<your aiven token>"}
 variable "service_name_prefix" {default = "mongo-demo-"}
-variable "cloud_name" {default = "<see aiven terraform provider doc>"}
+variable "cloud_name" {default = "google-australia-southeast1"}
 variable "project_name" {default = "<your aiven project>"}
-variable "mongo_uri" { default = "<mongo atlas uri>" }
+variable "mongo_uri" { default = "<your mongo uri>" }
+
 
