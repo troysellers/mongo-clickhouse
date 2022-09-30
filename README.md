@@ -246,4 +246,44 @@ Successful create will look something like
 
 ![table success](img/table-success.png)
 
-Now you should be able to select data from your movies table. Happy analytic'ing :) 
+Now you should be able to select data from your movies table. 
+
+Want to know how many English westerns are in the dataset? 
+
+```console
+mongo-demo-clickhouse-1 :) select title from default.movies where has(genres, 'Western') and has(countries, 'UK')
+
+SELECT title
+FROM default.movies
+WHERE has(genres, 'Western') AND has(countries, 'UK')
+
+Query id: 21c0783b-e7d0-49b9-b421-94d139edf808
+
+┌─title─────────────────────────┐
+│ The Sheriff of Fractured Jaw  │
+│ Charley-One-Eye               │
+│ Eagle's Wing                  │
+│ The Legend of the Lone Ranger │
+│ Dances with Wolves            │
+│ Thousand Pieces of Gold       │
+│ Posse                         │
+│ Silent Tongue                 │
+│ The Hi-Lo Country             │
+│ The Claim                     │
+│ Dust                          │
+│ Renegade                      │
+│ The Proposition               │
+└───────────────────────────────┘
+┌─title─────────┐
+│ Sweetgrass    │
+│ Blackthorn    │
+│ The Salvation │
+│ Slow West     │
+└───────────────┘
+
+17 rows in set. Elapsed: 0.029 sec. Processed 23.93 thousand rows, 2.21 MB (837.37 thousand rows/s., 77.27 MB/s.)
+
+```
+
+
+Happy analytic'ing :) 

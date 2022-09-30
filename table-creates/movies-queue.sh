@@ -1,6 +1,6 @@
 #!/bin/bash
 
-avn service integration-update 5be9583e-170f-45d9-880c-700cf75249d4 \
+avn service integration-update 60de67b3-5075-4177-90f3-d43d61ad4c8f \
     --project tsellers-demo \
     --user-config-json '{
     "tables": [
@@ -31,7 +31,7 @@ avn service integration-update 5be9583e-170f-45d9-880c-700cf75249d4 \
             ],
             "topics": [{"name": "sample_mflix.movies"}],
             "data_format": "JSONEachRow",
-            "group_name": "movies_consumer"
+            "group_name": "movies_consumer2"
         }
     ]
 }'
