@@ -1,11 +1,46 @@
+data "aiven_service_component" "schema_registry" {
+  project = var.project_name
+  service_name = aiven_kafka.demo-kafka.service_name
+  component = "schema_registry"
+  route = "dynamic"
+}
+
+data "aiven_project" "demo-project" {
+  project = var.project_name
+}
+
+data "aiven_project_vpc" "demo-vpc" {
+  count = var.use_cloud_vpc ? 1 : 0
+  project    = data.aiven_project.demo-project.project
+  cloud_name = var.cloud_name
+}
+
+data "aiven_kafka_user" "kafka_admin" {
+  project = var.project_name
+  service_name = aiven_kafka.demo-kafka.service_name
+
+  # default admin user that is automatically created each Aiven service
+  username = "avnadmin"
+
+  depends_on = [
+    aiven_kafka.demo-kafka
+  ]
+}
+
+locals {
+  schema_registry_url = "https://${data.aiven_service_component.schema_registry.host}:13858"
+}
+
 resource "aiven_kafka" "demo-kafka" {
   project                 = var.project_name
   cloud_name              = var.cloud_name
   plan                    = "business-4"
+  project_vpc_id          = var.use_cloud_vpc ? data.aiven_project_vpc.demo-vpc[0].id : null
   service_name            = join("-", [var.service_name_prefix, "kafka"])
   maintenance_window_dow  = "sunday"
   maintenance_window_time = "10:00:00"
   kafka_user_config {
+    schema_registry = true
     kafka_connect = true
     kafka_rest    = true
     kafka_version = "3.2"
@@ -19,6 +54,7 @@ resource "aiven_kafka_connect" "demo-kafka-connect" {
   project = var.project_name
   cloud_name = var.cloud_name
   plan = "startup-4"
+  project_vpc_id = var.use_cloud_vpc ? data.aiven_project_vpc.demo-vpc[0].id : null
   service_name = "demo-kafka-connect"
   maintenance_window_dow = "sunday"
   maintenance_window_time = "10:00:00"
@@ -62,7 +98,41 @@ resource "aiven_kafka_connector" "mongo-source" {
     "key.converter.schemas.enable":"false",
     "value.converter.schemas.enable":"false",
     "key.converter":"org.apache.kafka.connect.storage.StringConverter",
-    "value.converter":"org.apache.kafka.connect.storage.StringConverter"
+    "value.converter":"org.apache.kafka.connect.storage.StringConverter",
+    "topic.suffix": "string"
+  }
+}
+
+resource "aiven_kafka_connector" "mongo-source-avro" {
+  project = var.project_name
+  service_name = aiven_kafka_connect.demo-kafka-connect.service_name
+  connector_name = "mongo-source-avro"
+  depends_on = [aiven_service_integration.demo-kafka-connect-integration]
+  config = {
+    "name" : "mongo-source-avro",
+    "connector.class" : "io.debezium.connector.mongodb.MongoDbConnector",
+    "mongodb.hosts" : var.mongo_hosts,
+    "mongodb.user" : var.mongo_user,
+    "mongodb.password" : var.mongo_password,
+    "database.include.list" : "sample_mflix",    
+    "mongodb.name": "movies-stream",
+    "key.converter": "io.confluent.connect.avro.AvroConverter",
+    "key.converter.schemas.enable":"true",
+    "key.converter.schema.registry.url": local.schema_registry_url,
+    "key.converter.basic.auth.credentials.source": "USER_INFO",
+    "key.converter.schema.registry.basic.auth.user.info": "${data.aiven_kafka_user.kafka_admin.username}:${data.aiven_kafka_user.kafka_admin.password}",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schemas.enable": "true",
+    "value.converter.schema.registry.url": local.schema_registry_url,
+    "value.converter.basic.auth.credentials.source": "USER_INFO",
+    "value.converter.schema.registry.basic.auth.user.info": "${data.aiven_kafka_user.kafka_admin.username}:${data.aiven_kafka_user.kafka_admin.password}",
+    "transforms": "unwrap",
+    "transforms.unwrap.type": "io.debezium.connector.mongodb.transforms.ExtractNewDocumentState",
+    "transforms.unwrap.flatten.struct": "true",
+    "transforms.unwrap.sanitize.field.names": "true",
+    "transforms.unwrap.drop.tombstones": "false",
+    "transforms.unwrap.delete.handling.mode": "drop",
+    "transforms.unwrap.operation.header": "true"
   }
 }
 
@@ -70,6 +140,7 @@ resource "aiven_clickhouse" "mongo-clickhouse" {
   project = var.project_name
   cloud_name = var.cloud_name
   plan = "hobbyist-beta"
+  project_vpc_id = var.use_cloud_vpc ? data.aiven_project_vpc.demo-vpc[0].id : null
   service_name = "mongo-demo-clickhouse"
   maintenance_window_dow = "sunday"
   maintenance_window_time = "10:00:00"

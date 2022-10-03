@@ -3,5 +3,7 @@ variable "service_name_prefix" {default = "mongo-demo-"}
 variable "cloud_name" {default = "google-australia-southeast1"}
 variable "project_name" {default = "<your aiven project>"}
 variable "mongo_uri" { default = "<your mongo uri>" }
-
-
+variable "mongo_hosts" { default = "<mongo hosts>"}
+variable "mongo_user" { default = "<user>"}
+variable "mongo_password" { default = "<password>"}
+variable "use_cloud_vpc" { default = false }
