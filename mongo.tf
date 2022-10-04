@@ -28,7 +28,7 @@ data "aiven_kafka_user" "kafka_admin" {
 }
 
 locals {
-  schema_registry_url = "https://${data.aiven_service_component.schema_registry.host}:13858"
+  schema_registry_url = "https://${data.aiven_service_component.schema_registry.host}:${data.aiven_service_component.schema_registry.port}"
 }
 
 resource "aiven_kafka" "demo-kafka" {
