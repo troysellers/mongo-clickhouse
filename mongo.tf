@@ -103,29 +103,24 @@ resource "aiven_kafka_connector" "mongo-source" {
   }
 }
 
-resource "aiven_kafka_connector" "mongo-source-avro" {
+resource "aiven_kafka_connector" "mongo-source-json" {
   project = var.project_name
   service_name = aiven_kafka_connect.demo-kafka-connect.service_name
-  connector_name = "mongo-source-avro"
+  connector_name = "mongo-source-json"
   depends_on = [aiven_service_integration.demo-kafka-connect-integration]
   config = {
-    "name" : "mongo-source-avro",
+    "_aiven.restart.on.failure": "true",
+    "name" : "mongo-source-json",
     "connector.class" : "io.debezium.connector.mongodb.MongoDbConnector",
     "mongodb.hosts" : var.mongo_hosts,
     "mongodb.user" : var.mongo_user,
     "mongodb.password" : var.mongo_password,
     "database.include.list" : "sample_mflix",    
     "mongodb.name": "movies-stream",
-    "key.converter": "io.confluent.connect.avro.AvroConverter",
-    "key.converter.schemas.enable":"true",
-    "key.converter.schema.registry.url": local.schema_registry_url,
-    "key.converter.basic.auth.credentials.source": "USER_INFO",
-    "key.converter.schema.registry.basic.auth.user.info": "${data.aiven_kafka_user.kafka_admin.username}:${data.aiven_kafka_user.kafka_admin.password}",
-    "value.converter": "io.confluent.connect.avro.AvroConverter",
-    "value.converter.schemas.enable": "true",
-    "value.converter.schema.registry.url": local.schema_registry_url,
-    "value.converter.basic.auth.credentials.source": "USER_INFO",
-    "value.converter.schema.registry.basic.auth.user.info": "${data.aiven_kafka_user.kafka_admin.username}:${data.aiven_kafka_user.kafka_admin.password}",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable":"false",    
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false",    
     "transforms": "unwrap",
     "transforms.unwrap.type": "io.debezium.connector.mongodb.transforms.ExtractNewDocumentState",
     "transforms.unwrap.flatten.struct": "true",
